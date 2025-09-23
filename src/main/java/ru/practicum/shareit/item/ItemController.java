@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.*;
 
 import java.net.URI;
 import java.util.List;
@@ -19,7 +19,7 @@ public class ItemController {
     private final ItemService itemService;
 
     @PostMapping
-    public ResponseEntity<?> create(
+    public ResponseEntity<ItemDto> create(
             @RequestHeader("X-Sharer-User-Id") Long userId,
             @Valid @RequestBody ItemDto itemDto) {
         log.info("Received POST /items from user ID: {}", userId);
@@ -44,7 +44,7 @@ public class ItemController {
     }
 
     @GetMapping("/{itemId}")
-    public ResponseEntity<ItemDto> getById(
+    public ResponseEntity<ItemWithBookingsDto> getById(
             @RequestHeader("X-Sharer-User-Id") Long userId,
             @PathVariable Long itemId) {
         log.info("Received GET /items/{} from user ID: {}", itemId, userId);
@@ -52,7 +52,7 @@ public class ItemController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ItemDto>> getAllByUser(
+    public ResponseEntity<List<ItemWithBookingsDto>> getAllByUser(
             @RequestHeader("X-Sharer-User-Id") Long userId) {
         log.info("Received GET /items from user ID: {}", userId);
         return ResponseEntity.ok(itemService.getAllByUser(userId));
@@ -64,5 +64,22 @@ public class ItemController {
             @RequestHeader(value = "X-Sharer-User-Id", required = false) Long userId) {
         log.info("Received search request with text: '{}' from user ID: {}", text, userId);
         return ResponseEntity.ok(itemService.search(text));
+    }
+
+    @PostMapping("/{itemId}/comment")
+    public ResponseEntity<CommentDto> addComment(
+            @RequestHeader("X-Sharer-User-Id") Long userId,
+            @PathVariable Long itemId,
+            @Valid @RequestBody CommentRequestDto commentRequestDto) {
+        log.info("Received POST /items/{}/comment from user ID: {}", itemId, userId);
+        CommentDto commentDto = itemService.addComment(userId, itemId, commentRequestDto);
+
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(commentDto.getId())
+                .toUri();
+
+        return ResponseEntity.created(location).body(commentDto);
     }
 }
