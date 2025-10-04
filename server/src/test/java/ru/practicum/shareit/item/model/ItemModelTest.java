@@ -1,6 +1,7 @@
 package ru.practicum.shareit.item.model;
 
 import org.junit.jupiter.api.Test;
+import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.User;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -12,13 +13,16 @@ class ItemModelTest {
         User owner = new User();
         owner.setId(1L);
 
+        ItemRequest itemRequest = new ItemRequest();
+        itemRequest.setId(10L);
+
         Item item = Item.builder()
                 .id(1L)
                 .name("Дрель")
                 .description("Мощная дрель")
                 .available(true)
                 .owner(owner)
-                .requestId(10L)
+                .request(itemRequest)
                 .build();
 
         assertEquals(1L, item.getId());
@@ -26,7 +30,7 @@ class ItemModelTest {
         assertEquals("Мощная дрель", item.getDescription());
         assertTrue(item.getAvailable());
         assertEquals(owner, item.getOwner());
-        assertEquals(10L, item.getRequestId());
+        assertEquals(itemRequest, item.getRequest());
     }
 
     @Test

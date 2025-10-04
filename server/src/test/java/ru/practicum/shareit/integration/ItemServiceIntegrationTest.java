@@ -19,6 +19,8 @@ import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemWithBookingsDto;
 import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.request.ItemRequestRepository;
+import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.UserRepository;
 
@@ -47,6 +49,9 @@ class ItemServiceIntegrationTest {
     @Autowired
     private CommentRepository commentRepository;
 
+    @Autowired
+    private ItemRequestRepository itemRequestRepository;
+
     private User owner;
     private User booker;
     private Item item;
@@ -56,6 +61,7 @@ class ItemServiceIntegrationTest {
         commentRepository.deleteAll();
         bookingRepository.deleteAll();
         itemRepository.deleteAll();
+        itemRequestRepository.deleteAll();
         userRepository.deleteAll();
 
         owner = new User();
@@ -89,6 +95,27 @@ class ItemServiceIntegrationTest {
         assertEquals("Молоток", result.getName());
         assertEquals("Простой молоток", result.getDescription());
         assertTrue(result.getAvailable());
+    }
+
+    @Test
+    void create_shouldCreateItemWithRequest() {
+        ItemRequest itemRequest = new ItemRequest();
+        itemRequest.setDescription("Нужен молоток");
+        itemRequest.setRequester(booker);
+        itemRequest.setCreated(LocalDateTime.now());
+        ItemRequest savedRequest = itemRequestRepository.save(itemRequest);
+
+        ItemDto newItemDto = new ItemDto();
+        newItemDto.setName("Молоток");
+        newItemDto.setDescription("Простой молоток");
+        newItemDto.setAvailable(true);
+        newItemDto.setRequestId(savedRequest.getId());
+
+        ItemDto result = itemService.create(owner.getId(), newItemDto);
+
+        assertNotNull(result);
+        assertEquals("Молоток", result.getName());
+        assertEquals(savedRequest.getId(), result.getRequestId());
     }
 
     @Test

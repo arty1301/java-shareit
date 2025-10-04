@@ -91,17 +91,22 @@ public class ItemRequestServiceImpl implements ItemRequestService {
                 .map(ItemRequest::getId)
                 .collect(Collectors.toList());
 
-        Map<Long, List<Item>> itemsByRequest = itemRepository.findByRequestIdIn(requestIds)
-                .stream()
-                .collect(Collectors.groupingBy(Item::getRequestId));
+        List<Item> allItems = itemRepository.findByRequestIdIn(requestIds);
+
+        Map<Long, List<Item>> itemsByRequest = allItems.stream()
+                .collect(Collectors.groupingBy(
+                        item -> item.getRequest().getId(),
+                        Collectors.toList()
+                ));
 
         return requests.stream()
                 .map(request -> {
                     ItemRequestDto dto = itemRequestMapper.toItemRequestDto(request);
-                    dto.setItems(itemsByRequest.getOrDefault(request.getId(), Collections.emptyList())
+                    List<ItemDto> itemDtos = itemsByRequest.getOrDefault(request.getId(), Collections.emptyList())
                             .stream()
                             .map(this::convertToItemDto)
-                            .collect(Collectors.toList()));
+                            .collect(Collectors.toList());
+                    dto.setItems(itemDtos);
                     return dto;
                 })
                 .collect(Collectors.toList());
@@ -113,7 +118,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         itemDto.setName(item.getName());
         itemDto.setDescription(item.getDescription());
         itemDto.setAvailable(item.getAvailable());
-        itemDto.setRequestId(item.getRequestId());
+        itemDto.setRequestId(item.getRequest() != null ? item.getRequest().getId() : null);
         return itemDto;
     }
 

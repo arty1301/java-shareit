@@ -13,6 +13,7 @@ import ru.practicum.shareit.request.ItemRequestRepository;
 import ru.practicum.shareit.request.ItemRequestService;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
 import ru.practicum.shareit.request.dto.ItemRequestRequestDto;
+import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.UserRepository;
 
@@ -142,12 +143,15 @@ class ItemRequestServiceIntegrationTest {
         requestDto.setDescription("Нужна дрель");
         ItemRequestDto createdRequest = itemRequestService.create(requester.getId(), requestDto);
 
+        ItemRequest itemRequest = itemRequestRepository.findById(createdRequest.getId())
+                .orElseThrow(() -> new NotFoundException("ItemRequest not found"));
+
         Item item = new Item();
         item.setName("Дрель");
         item.setDescription("Мощная дрель");
         item.setAvailable(true);
         item.setOwner(owner);
-        item.setRequestId(createdRequest.getId());
+        item.setRequest(itemRequest);
         itemRepository.save(item);
 
         ItemRequestDto result = itemRequestService.getById(requester.getId(), createdRequest.getId());

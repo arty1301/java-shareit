@@ -13,7 +13,7 @@ public interface ItemMapper {
     @Mapping(target = "name", source = "item.name")
     @Mapping(target = "description", source = "item.description")
     @Mapping(target = "available", source = "item.available")
-    @Mapping(target = "requestId", source = "item.requestId")
+    @Mapping(target = "requestId", source = "item.request.id")
     ItemDto toItemDto(Item item);
 
     @Mapping(target = "id", source = "itemDto.id")
@@ -21,6 +21,6 @@ public interface ItemMapper {
     @Mapping(target = "description", source = "itemDto.description")
     @Mapping(target = "available", source = "itemDto.available")
     @Mapping(target = "owner", source = "owner")
-    @Mapping(target = "requestId", source = "itemDto.requestId")
+    @Mapping(target = "request", ignore = true)
     Item toItem(ItemDto itemDto, User owner);
 }

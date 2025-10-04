@@ -2,9 +2,6 @@ package ru.practicum.shareit.item;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.BookingRepository;
@@ -17,6 +14,7 @@ import ru.practicum.shareit.item.dto.*;
 import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.request.ItemRequestRepository;
+import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.UserRepository;
 
@@ -44,6 +42,13 @@ public class ItemServiceImpl implements ItemService {
         validateItemCreation(itemDto, owner);
 
         Item item = itemMapper.toItem(itemDto, owner);
+
+        if (itemDto.getRequestId() != null) {
+            ItemRequest itemRequest = itemRequestRepository.findById(itemDto.getRequestId())
+                    .orElseThrow(() -> new NotFoundException("Item request not found with ID: " + itemDto.getRequestId()));
+            item.setRequest(itemRequest);
+        }
+
         Item savedItem = itemRepository.save(item);
         log.info("Created item with ID: {}", savedItem.getId());
         return itemMapper.toItemDto(savedItem);
@@ -63,6 +68,14 @@ public class ItemServiceImpl implements ItemService {
         }
         if (itemDto.getAvailable() != null) {
             existingItem.setAvailable(itemDto.getAvailable());
+        }
+
+        if (itemDto.getRequestId() != null) {
+            ItemRequest itemRequest = itemRequestRepository.findById(itemDto.getRequestId())
+                    .orElseThrow(() -> new NotFoundException("Item request not found with ID: " + itemDto.getRequestId()));
+            existingItem.setRequest(itemRequest);
+        } else if (itemDto.getRequestId() == null && existingItem.getRequest() != null) {
+            existingItem.setRequest(null);
         }
 
         Item updatedItem = itemRepository.save(existingItem);
@@ -159,13 +172,12 @@ public class ItemServiceImpl implements ItemService {
         dto.setName(item.getName());
         dto.setDescription(item.getDescription());
         dto.setAvailable(item.getAvailable());
-        dto.setRequestId(item.getRequestId());
+        dto.setRequestId(item.getRequest() != null ? item.getRequest().getId() : null);
         return dto;
     }
 
     private void addBookingInfo(Item item, ItemWithBookingsDto itemDto) {
         LocalDateTime now = LocalDateTime.now();
-        Pageable limit = PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "start"));
 
         List<Booking> lastBookings = bookingRepository.findByItemIdAndEndIsBeforeOrderByStartDesc(item.getId(), now);
         if (!lastBookings.isEmpty()) {
